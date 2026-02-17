@@ -1,10 +1,11 @@
-
 // Get the canvas element as a const
 const canvas = document.getElementById("renderCanvas");
 // Create the BABYON 3D engine, and attach it to the canvas
 const engine = new BABYLON.Engine(canvas, true);
+
 // The createScene function
 const createScene = async function() {
+
     // Create a new BABYLON scene, passing in the engine as an argument
     const scene = new BABYLON.Scene(engine);
     
@@ -38,8 +39,9 @@ const createScene = async function() {
     const box = BABYLON.MeshBuilder.CreateBox("box", {size: 0.5}, scene);
     const boxMat = new BABYLON.StandardMaterial("boxMat", scene);
     boxMat.diffuseColor = new BABYLON.Color3(1, 0.5, 0 );
-    boxMaterial= boxMat;
-    // STEP 4: Mov= e the box so it is not at your feet
+    box.material = boxMat;
+
+    // STEP 4: Move the box so it is not at your feet
     box.position.x = 1;
     box.position.z = 2;
 
@@ -63,98 +65,140 @@ const createScene = async function() {
         uiOptions: {
             sessionMode: "immersive-ar",
             
-            // STEP 2b: We need 0, 0, 0 to be a space on the floor, not between your eyes! There are several types of reference spaces: viewer, local, local-floor, bounded-floor, and unbounded (https://developer.mozilla.org/en-US/docs/Web/API/XRReferenceSpace)
-            refrenceSpaceType: "local-floor"
+            // STEP 2b: We need 0, 0, 0 to be a space on the floor, not between your eyes!
+            referenceSpaceType: "local-floor"
         },
-        // STEP 2c: Meta Quest requires these to be explicitly requested
+
+       // STEP 2c: Meta Quest requires these to be explicitly requested
        optionalFeatures: ["hit-test", "anchors"] 
     });
-    // STEP 3: Commit your code and push it to a server, then try it out with a headset - notice how the orange box is right at your feet - 0, 0, 0 is located on the floor at your feet
+
 
 
     /* HIT-TEST
     ---------------------------------------------------------------------------------------------------- */
-    // STEP 5: A hit-test is a standard feature in AR that permits a ray to be cast from the device (headset or phone) into the real world, and detect where it intersects with a real-world object. This enables AR apps to place objects on surfaces or walls of the real world (https://immersive-web.github.io/hit-test/). To enable hit-testing, use the enableFeature() method of the featuresManager from the base WebXR experience helper.
    
     // STEP 5a: Create the features manager object
-     const fm = xr.baseExperience.featuresManager;
+    const fm = xr.baseExperience.featuresManager;
+
     // STEP 5b: Enable the hit-test feature
     const hitTest = fm.enableFeature(BABYLON.WebXRHitTest, "latest");
 
     // STEP 6a: Create a marker to show where a hit-test has registered a surface
-     const marker = BABYLON.MeshBuilder.CreateCylinder("marker", { diameter: 0.15, height: 0.01 }, scene);
-
+    const marker = BABYLON.MeshBuilder.CreateCylinder("marker", { diameter: 0.15, height: 0.01 }, scene);
 
     // STEP 6b: Initialize the Quaternion so the hit-test can control rotation in all dimensions
-    marker.rotationQuaternion = new  BABYLON.Quaternion();
+    marker.rotationQuaternion = new BABYLON.Quaternion();
 
     // STEP 6c: Make the marker invisible by default
-    marker.isVisible= false;
+    marker.isVisible = false;
 
     // STEP 6d: Colour the marker
-    
- const markerMat = new BABYLON.StandardMaterial("markerMat", scene);
+    const markerMat = new BABYLON.StandardMaterial("markerMat", scene);
     markerMat.diffuseColor = new BABYLON.Color3(1, 0.5, 0 );
     markerMat.alpha = 0.5;
-    marker.material= markerMat;
+    marker.material = markerMat;
+
     // STEP 7a: Create a variable to store the latest hit-test results
     let lastHitTest;
+
     // STEP 7b: Add an event listener for the hit-test results
     hitTest.onHitTestResultObservable.add((results) => {
+
         // STEP 7c: If there is a successful hit-test, then make the marker visible
         if (results.length) {
+
             marker.isVisible = true;
+
             // STEP 7d: Grab the hit-test matrix of coordinates
             lastHitTest = results[0];
+
             // STEP 7e: Extract what we need so that the marker is oriented properly on the detected surface
-           lastHitTest.transformationMatrix.decompose(undefined, marker.rotationQuaternion, marker.position);
+            lastHitTest.transformationMatrix.decompose(undefined, marker.rotationQuaternion, marker.position);
+
         } else { 
+
             // STEP 7f: Otherwise, marker is invisible
-            marker.inVisible = false;
+            marker.isVisible = false;
         }
     });
 
+
+
     /* ANCHORS
     ---------------------------------------------------------------------------------------------------- */
-    // STEP 8: Anchors are a feature that allow you to place objects in the real world space and have them stay there, even if the observer moves around. To enable anchors, use the enableFeature() method of the featuresManager from the base WebXR experience helper (https://immersive-web.github.io/anchors/).
   
     // STEP 8a: Enable the anchor feature
-     const anchorSystem = fm.enableFeature(BABYLON.WebXRAnchorSystem, "latest");
+    const anchorSystem = fm.enableFeature(BABYLON.WebXRAnchorSystem, "latest");
+
     // STEP 8b: Add event listener for click
     scene.onPointerDown = async () => {
+
         if(lastHitTest && marker.isVisible) {
+
             // STEP 8c: Create an anchor point based on the last hit-test coordinates
-            const anchor = await anchorSystem.addAnchorPointUsingHitTestResultAsyc(lastHitTest);
-            // STEP 8d: Build a box to drop on the surface
-            const box = buildRandomBox();
-            // STEP 8e: Attach the box to the real world!
-            anchor.attachedNode = box;
-          }  
+            const anchor = await anchorSystem.addAnchorPointUsingHitTestResultAsync(lastHitTest);
+
+            // STEP 8d: Build a RANDOM mesh to drop on the surface
+            const mesh = buildRandomMesh();
+
+            // STEP 8e: Attach the mesh to the real world!
+            anchor.attachedNode = mesh;
+        }  
+    }
+    
+
+    // Function to create a randomly-sized, randomly-coloured mesh
+    function buildRandomMesh() {
+
+        // Random size (not too big or too small)
+        const randomSize = BABYLON.Scalar.RandomRange(0.05, 0.25);
+
+        // Randomly choose a mesh type
+        const meshTypes = ["box", "sphere", "cylinder", "torus"];
+        const randomType = meshTypes[Math.floor(Math.random() * meshTypes.length)];
+
+        let mesh;
+
+        switch(randomType) {
+
+           
+
+           
+            case "cylinder":
+                mesh = BABYLON.MeshBuilder.CreateCylinder("cylinder", { 
+                    height: randomSize, 
+                    diameter: randomSize 
+                }, scene);
+                break;
+
+            
         }
-    
-    
-    // Function to create a randomly-coloured box mesh
-    function buildRandomBox() {
-        const box = BABYLON.MeshBuilder.CreateBox("box", { size: 0.1 }, scene);
-        // Move the box geometry up by half its height (0.05) and "freeze" that as the new zero point so the box is not embedded in the surface
-        box.position.y = 0.05; 
-        box.bakeCurrentTransformIntoVertices();
-        // Colour the box
-        const boxMat = new BABYLON.StandardMaterial("boxMat", scene);
-        boxMat.diffuseColor = new BABYLON.Color3(Math.random(), Math.random(), Math.random());
-        box.material = boxMat;
-        return box;
+
+        // Move the mesh up so it is not embedded in the surface
+        mesh.position.y = randomSize / 2;
+        mesh.bakeCurrentTransformIntoVertices();
+
+        // Random colour
+        const mat = new BABYLON.StandardMaterial("mat", scene);
+        mat.diffuseColor = new BABYLON.Color3(Math.random(), Math.random(), Math.random());
+        mesh.material = mat;
+
+        return mesh;
     }
 
     // Return the scene
     return scene;
 };
 
+
 createScene().then((scene) => {
+
     // Continually render the scene in an endless loop
     engine.runRenderLoop(function () {
         scene.render();
     });
+
     // Event listener that adapts to the user resizing the screen (in the browser view)
     window.addEventListener("resize", function () {
         engine.resize();
