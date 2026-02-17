@@ -117,18 +117,20 @@ const createScene = async function() {
     /* ANCHORS
     ---------------------------------------------------------------------------------------------------- */
     // STEP 8: Anchors are a feature that allow you to place objects in the real world space and have them stay there, even if the observer moves around. To enable anchors, use the enableFeature() method of the featuresManager from the base WebXR experience helper (https://immersive-web.github.io/anchors/).
+  
     // STEP 8a: Enable the anchor feature
-    
+     const anchorSystem = fm.enableFeature(BABYLON.WebXRAnchorSystem, "latest");
     // STEP 8b: Add event listener for click
-    
-        
+    scene.onPointerDown = async () => {
+        if(lastHitTest && marker.isVisible) {
             // STEP 8c: Create an anchor point based on the last hit-test coordinates
-            
+            const anchor = await anchorSystem.addAnchorPointUsingHitTestResultAsyc(lastHitTest);
             // STEP 8d: Build a box to drop on the surface
-            
+            const box = buildRandomBox();
             // STEP 8e: Attach the box to the real world!
-            
-        
+            anchor.attachedNode = box;
+          }  
+        }
     
     
     // Function to create a randomly-coloured box mesh
